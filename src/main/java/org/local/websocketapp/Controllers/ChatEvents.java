@@ -10,7 +10,7 @@ import org.local.websocketapp.Models.UserC;
 import org.local.websocketapp.Repositories.ChatRepository;
 import org.local.websocketapp.Repositories.MessageRepository;
 import org.local.websocketapp.Repositories.UserRepository;
-import org.local.websocketapp.Servicies.ServiceForChat;
+import org.local.websocketapp.Services.ServiceForChat;
 import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,6 +36,7 @@ public class ChatEvents {
     ServiceForChat serviceForChat;
 
     @GetMapping("/getChats")
+    @Transactional
     public ResponseEntity<List<Chat>> getChats(HttpServletRequest request){
         String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
 

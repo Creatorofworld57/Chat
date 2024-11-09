@@ -4,15 +4,13 @@ package org.local.websocketapp.Controllers;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
+import org.local.websocketapp.Models.Data;
 import org.local.websocketapp.Models.UserC;
 import org.local.websocketapp.Repositories.UserRepository;
 import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
@@ -64,6 +62,15 @@ public class RestController {
        return repository.findAll();
     }
 
+    @PostMapping("/api/checking")
+    public ResponseEntity<?> checkUserName(@RequestBody Data data) {
+        System.out.println(data.getName() + " существует");
+        if (repository.findUserCByName(data.getName()).isPresent()) {
+            return ResponseEntity.status(201).build();
+        } else {
+            return ResponseEntity.status(200).build();
+        }
+    }
 
 
 }

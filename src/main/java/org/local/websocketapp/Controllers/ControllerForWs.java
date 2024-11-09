@@ -9,18 +9,15 @@ import org.local.websocketapp.Models.UserC;
 import org.local.websocketapp.Repositories.ChatRepository;
 import org.local.websocketapp.Repositories.MessageRepository;
 import org.local.websocketapp.Repositories.UserRepository;
-import org.local.websocketapp.Servicies.ServiceForMessages;
+import org.local.websocketapp.Services.ServiceForMessages;
 import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 
 @Controller

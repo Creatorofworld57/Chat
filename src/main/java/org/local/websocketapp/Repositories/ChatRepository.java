@@ -1,7 +1,6 @@
 package org.local.websocketapp.Repositories;
 
 import org.local.websocketapp.Models.Chat;
-import org.local.websocketapp.Models.UserC;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

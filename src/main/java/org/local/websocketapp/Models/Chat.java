@@ -20,6 +20,7 @@ public class Chat {
     @Column(name = "participants")
     List<String> participants = new ArrayList<>();
     String lastMessage;
+    
     byte[] image;
 
 

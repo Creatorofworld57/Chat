@@ -10,6 +10,4 @@ public class updateModel {
     private String password;
     private String tele;
     private String git;
-
-
 }

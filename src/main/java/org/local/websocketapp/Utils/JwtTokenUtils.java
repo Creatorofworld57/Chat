@@ -7,9 +7,7 @@ import jakarta.annotation.PostConstruct;
 
 
 import lombok.RequiredArgsConstructor;
-import org.local.websocketapp.Models.UserC;
 
-import org.local.websocketapp.Models.UserPrincipal;
 import org.local.websocketapp.Repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 

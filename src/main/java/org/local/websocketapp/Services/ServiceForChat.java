@@ -1,7 +1,7 @@
-package org.local.websocketapp.Servicies;
+package org.local.websocketapp.Services;
 
 import lombok.AllArgsConstructor;
-
+import org.local.websocketapp.Models.Img;
 import org.local.websocketapp.Repositories.ImageRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ import java.util.Optional;
 public class ServiceForChat {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceForChat.class);
-    private ImageRepository imageRepository;
+    private final ImageRepository imageRepository;
 
     public byte[] mergeImagesService(List<Long> ids) {
         if (ids.size() < 2) {
@@ -33,8 +33,12 @@ public class ServiceForChat {
             // Загрузка изображений по списку ID
             List<BufferedImage> images = new ArrayList<>();
             for (Long id : ids) {
-                Optional<byte[]> imageBytes = imageRepository.findById(id).map(image -> image.getBytes());
+                Optional<byte[]> imageBytes = imageRepository.findById(id).map(Img::getBytes);
                 imageBytes.ifPresent(bytes -> images.add(bytesToBufferedImage(bytes)));
+            }
+
+            if (images.size() < 2) {
+                throw new IllegalArgumentException("Недостаточно изображений после загрузки из базы данных.");
             }
 
             // Объединение изображений
@@ -65,17 +69,17 @@ public class ServiceForChat {
 
         // Рисуем каждое изображение рядом друг с другом
         int currentWidth = 0;
-        if(images.size()>4){
-            for (BufferedImage image : images.subList(0,3)) {
+        if (images.size() > 4) {
+            for (BufferedImage image : images.subList(0, 3)) {
+                g.drawImage(image, currentWidth, 0, null);
+                currentWidth += image.getWidth();
+            }
+        } else {
+            for (BufferedImage image : images) {
                 g.drawImage(image, currentWidth, 0, null);
                 currentWidth += image.getWidth();
             }
         }
-        else{
-        for (BufferedImage image : images) {
-            g.drawImage(image, currentWidth, 0, null);
-            currentWidth += image.getWidth();
-        }}
 
         g.dispose();
         return combinedImage;
