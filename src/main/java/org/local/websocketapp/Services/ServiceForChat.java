@@ -46,7 +46,7 @@ public class ServiceForChat {
             logger.info("Изображения успешно объединены!");
 
             // Преобразование в массив байтов и возврат результата
-            return bufferedImageToBytes(mergedImage, "image/jpeg");
+            return bufferedImageToBytes(mergedImage, ".jpeg");
 
         } catch (IOException e) {
             logger.error("Ошибка при объединении изображений", e);

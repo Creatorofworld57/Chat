@@ -18,9 +18,9 @@ public class Chat {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "chat_participants", joinColumns = @JoinColumn(name = "chat_id"))
     @Column(name = "participants")
-    List<String> participants = new ArrayList<>();
+    List<Long> participants = new ArrayList<>();
     String lastMessage;
-    
+
     byte[] image;
 
 
