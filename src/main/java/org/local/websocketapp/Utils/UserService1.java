@@ -1,11 +1,9 @@
 package org.local.websocketapp.Utils;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.local.websocketapp.Models.AuthRequest;
 import org.local.websocketapp.Models.UserC;
 import org.local.websocketapp.Repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -38,20 +36,18 @@ public class UserService1 {
 
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword());
         Authentication authentication;
-        System.out.println(user.getName() +" "+ user.getPassword());
+
         try {
             authentication = authManager.authenticate(token);
-            System.out.println("Authentication result: " + authentication);
+
 
             if (authentication != null && authentication.isAuthenticated()) {
-                System.out.println("token generated");
+
                 return jwtTokenUtils.generateToken(user.getName());
             } else {
-                System.out.println("Authentication failed: " + authentication);
                 return "fail";
             }
         } catch (AuthenticationException e) {
-            System.out.println("Error during authentication: " + e.getMessage());
             return "fail";
         }
     }

@@ -1,12 +1,11 @@
-package org.local.websocketapp.Servicies;
+package org.local.websocketapp.Services;
 
 
 
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
+import org.local.websocketapp.Models.AuthRequest;
 import org.local.websocketapp.Models.Img;
 import org.local.websocketapp.Models.UserC;
 import org.local.websocketapp.Repositories.ImageRepository;
@@ -23,7 +22,7 @@ import java.util.*;
 
 @Service
 @AllArgsConstructor
-public class ServiceApp {
+public class ServiceForUser {
     private UserRepository repository;
     private ImageRepository imageRepository;
     private PasswordEncoder passwordEncoder;
@@ -41,11 +40,11 @@ public class ServiceApp {
     }
 
 
-    public void addUser(HttpServletRequest request, MultipartFile file) throws IOException {
+    public String addUser(AuthRequest request, MultipartFile file) throws IOException {
         Img img = new Img();
         UserC user = new UserC();
-        user.setName(request.getParameter("name"));
-        user.setPassword(request.getParameter("password"));
+        user.setName(request.getName());
+        user.setPassword(request.getPassword());
 
         if (file != null && file.getSize() != 0) {
             img = toImgEntity(file);
@@ -60,8 +59,13 @@ public class ServiceApp {
         Img img1 = imageRepository.save(img);
         userok.setPreviewImageId(img1.getId());
         repository.save(userok);
+        return "good";
 
     }
+    public void Registration (MultipartFile file, AuthRequest request){
+
+    }
+
 
 
 

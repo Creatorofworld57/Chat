@@ -8,9 +8,10 @@ import org.local.websocketapp.Models.Data;
 import org.local.websocketapp.Models.Message;
 import org.local.websocketapp.Models.UserC;
 import org.local.websocketapp.Repositories.ChatRepository;
+import org.local.websocketapp.Repositories.ImageRepository;
 import org.local.websocketapp.Repositories.MessageRepository;
 import org.local.websocketapp.Repositories.UserRepository;
-import org.local.websocketapp.Servicies.ServiceForChat;
+import org.local.websocketapp.Services.ServiceForChat;
 import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,24 +32,32 @@ public class ChatEvents {
 
     UserRepository userRepository;
     ChatRepository chatRepository;
+    ImageRepository imageRepository;
     MessageRepository messageRepository;
     JwtTokenUtils jwtTokenUtils;
     ServiceForChat serviceForChat;
 
     @GetMapping("/getChats")
-    public ResponseEntity<List<Chat>> getChats(HttpServletRequest request){
+    @Transactional
+    public ResponseEntity<List<Chat>> getChats(HttpServletRequest request) {
         String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
 
-         Optional<UserC> userOpt = userRepository.findUserCByName(username);
+        Optional<UserC> userOpt = userRepository.findUserCByName(username);
+        String userName = userOpt.get().getName();
+        List<Chat> buffer = chatRepository.findChatByUserC(userOpt.get().getChats());
+        buffer.forEach(i -> i.setName(i.getName().replaceFirst(", " + userName, "").replaceFirst(userName+",", "")));
 
-        return userOpt.map(userC -> ResponseEntity.ok(chatRepository.findChatByUserC(userOpt.get().getChats()))).orElseGet(() -> ResponseEntity.ok(List.of()));
+     //   buffer.forEach(i -> i.setName(i.getName().replaceFirst("(,\\s*" + userName + ")|" + userName, "")));
+
+        return userOpt.map(userC -> ResponseEntity.ok(buffer)).orElseGet(() -> ResponseEntity.ok(List.of()));
     }
 
     @GetMapping("/getChats/{id}")
-    public ResponseEntity<Chat> getChat(@PathVariable Long id){
+    public ResponseEntity<Chat> getChat(@PathVariable Long id) {
         Chat chatOpt = chatRepository.findChatById(id).get();
         return ResponseEntity.ok(chatOpt);
     }
+
     @PostMapping("/createChat")
     public void createChat(HttpServletRequest request, @RequestBody List<Long> users) {
         //извлекаем из токена username
@@ -60,7 +68,8 @@ public class ChatEvents {
 
         List<UserC> chatUsers = userRepository.findAllUserCWithId(users);
         //Добавляем самого юзера к остальным ЧЛЕНАМ чата
-        chatUsers.add(userRepository.findUserCByName(username).get());
+        UserC mainUser = userRepository.findUserCByName(username).get();
+        chatUsers.add(mainUser);
 
         // Извлекаем имена участников в виде списка
         List<String> participantNames = chatUsers.stream()
@@ -69,12 +78,13 @@ public class ChatEvents {
 
         // Создаем новый чат и устанавливаем участников и имя
         Chat chat = new Chat();
-        chat.setParticipants(participantNames);
-       //солздаем фото для чата
-        chat.setImage( serviceForChat.mergeImagesService(chatUsers.stream()
-                    .map(UserC::getPreviewImageId)
-                    .collect(Collectors.toList())));
-
+        users.add(mainUser.getId());
+        chat.setParticipants(users);
+        //солздаем фото для чата
+        //  chat.setImage( serviceForChat.mergeImagesService(chatUsers.stream()
+        //           .map(UserC::getPreviewImageId)
+        //          .collect(Collectors.toList())));
+        // chat.setImage(imageRepository.findById(chatUsers.get(0).getPreviewImageId()).get().getBytes());
 
 
         // Устанавливаем имя чата как строку с именами участников, разделенными запятой
@@ -91,19 +101,21 @@ public class ChatEvents {
 
     @GetMapping("/getMessages/{id}")
     @Transactional
-    public ResponseEntity<List<Message>> getMessages(@PathVariable Long id){
+    public ResponseEntity<List<Message>> getMessages(@PathVariable Long id) {
         System.out.println("getMessage");
         Chat chatOpt = chatRepository.findChatById(id).get();
         return ResponseEntity.ok(messageRepository.findMessageByChat(chatOpt));
     }
+
     @GetMapping("/getLastMessage/{id}")
-    public ResponseEntity<String> getLastMessage(@PathVariable Long id){
+    public ResponseEntity<String> getLastMessage(@PathVariable Long id) {
         Chat chatOpt = chatRepository.findChatById(id).get();
         Data data = new Data();
         data.setName(chatOpt.getLastMessage());
 
         return ResponseEntity.ok().body(data.getName());
     }
+
     @GetMapping("/chatImages/{id}")
     public ResponseEntity<?> likedPlaylistImages(@PathVariable Long id) {
         byte[] massa = chatRepository.findImagesById(id);

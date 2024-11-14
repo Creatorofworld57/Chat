@@ -2,7 +2,7 @@ package org.local.websocketapp.Controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.local.websocketapp.Models.*;
-import org.local.websocketapp.Repositories.UserRepository;
+import org.local.websocketapp.Services.ServiceForUser;
 import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.local.websocketapp.Utils.MyUserDetailsService;
 
@@ -11,15 +11,12 @@ import org.local.websocketapp.Utils.UserService1;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Date;
+import java.io.IOException;
 import java.util.Objects;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,14 +25,12 @@ public class AuthController {
     private final JwtTokenUtils jwtUtil;
     private final MyUserDetailsService userService;
     private final UserService1 userService1;
-    private final PasswordEncoder passwordEncoder;
-    private final UserRepository repository;
+    private final ServiceForUser serviceForUser;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
-        System.out.println(repository.findUserCByName(authRequest.getName()).get().getName());
         String ver = userService1.verify(authRequest);
-        System.out.println(ver);
+
         if (!Objects.equals(ver, "fail")) {
             String refreshToken = jwtUtil.generateRefreshToken(authRequest.getName());
             return ResponseEntity.ok(new AuthResponse(ver, refreshToken));
@@ -46,19 +41,19 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> signup(@RequestBody UserC user) {
-        // Encrypt password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setUpdatedAt(new Date());
-        user.setCreatedAt(new Date());
-        var savedUser = userService1.register(user);
-        if (savedUser != null) {
-            String accessToken = jwtUtil.generateToken(user.getName());
-            String refreshToken = jwtUtil.generateRefreshToken(user.getName());
-            return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken));
+    public ResponseEntity<AuthResponse> signup(@RequestParam("name")String name,@RequestParam("password") String password , @RequestPart("file")MultipartFile file) throws IOException {
+      AuthRequest authRequest = new AuthRequest(name,password);
+        String registration = serviceForUser.addUser(authRequest,file);
+        if (Objects.equals(registration, "good")) {
+            String ver = userService1.verify(authRequest);
+            if (!Objects.equals(ver, "fail")) {
+                String refreshToken = jwtUtil.generateRefreshToken(authRequest.getName());
+                return ResponseEntity.ok(new AuthResponse(ver, refreshToken));
+            }
         } else {
             return ResponseEntity.status(500).build();
         }
+        return null;
     }
 
     @PostMapping("/refresh-token")

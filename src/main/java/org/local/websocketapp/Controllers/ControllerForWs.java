@@ -9,18 +9,17 @@ import org.local.websocketapp.Models.UserC;
 import org.local.websocketapp.Repositories.ChatRepository;
 import org.local.websocketapp.Repositories.MessageRepository;
 import org.local.websocketapp.Repositories.UserRepository;
-import org.local.websocketapp.Servicies.ServiceForMessages;
+import org.local.websocketapp.Services.ServiceForMessages;
 import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 
 @Controller
@@ -30,12 +29,13 @@ public class ControllerForWs {
     ChatRepository chatRepository;
     MessageRepository messageRepository;
     JwtTokenUtils jwtTokenUtils;
+    SimpMessagingTemplate messagingTemplate;
     private ServiceForMessages service;
 
     @MessageMapping("/chat")
-    @SendTo("/message/first")
+    //@SendTo("/message/first")
     @Transactional
-    public Message getAnswer(@Payload InputMessage message) {
+    public void getAnswer(@Payload InputMessage message) {
        String token = message.getToken();
         // Проверяем, что аутентификация не является null, и пользователь аутентифицирован
         UserC user = userRepository.findUserCByName(jwtTokenUtils.extractUserName(token))
@@ -55,8 +55,8 @@ public class ControllerForWs {
         message1.setSender(user.getId());
         message1.setTimestamp(LocalDateTime.now());
         messageRepository.save(message1);
-
-        return message1;
+        // отправка сообщения в конкретный чат
+        messagingTemplate.convertAndSend("/message/chatGet/" + chat.getId(), message1);
     }
     @MessageMapping("/chatChanges")
     @SendTo("/message/chatUpdated")
