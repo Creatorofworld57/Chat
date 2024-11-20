@@ -1,5 +1,6 @@
 package org.local.websocketapp.Config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.local.websocketapp.Utils.MyUserDetailsService;
 
@@ -61,10 +62,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .exceptionHandling(e->e
+                // Отказываемся от стандартной обработки ошибок
+                .authenticationEntryPoint((request, response, authException) -> {
+                    // Не обрабатываем, позволяем @ControllerAdvice работать
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    // Не обрабатываем, позволяем @ControllerAdvice работать
+                }))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login","/api/images/**","/apiChats/chatImages/**",
-                                "/signup","/api/checking").permitAll()
+                                "/signup","/api/checking","/refresh-token").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user").permitAll()
                         .requestMatchers("/newUser").anonymous()
@@ -72,7 +81,7 @@ public class SecurityConfig {
                 )
                 .cors(corsSpec -> corsSpec.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.addAllowedOrigin("https://localhost:3000");
+                    corsConfig.addAllowedOrigin(url);
                     corsConfig.addAllowedHeader("*");
                     corsConfig.setAllowedMethods(List.of(
                             HttpMethod.GET.name(),

@@ -1,11 +1,13 @@
 package org.local.websocketapp.Controllers;
 
 
+import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import org.local.websocketapp.Models.Data;
 import org.local.websocketapp.Models.UserC;
+import org.local.websocketapp.Models.View;
 import org.local.websocketapp.Repositories.UserRepository;
 import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.springframework.http.ResponseEntity;
@@ -57,9 +59,11 @@ public class RestController {
         return u.orElse(null);
 
     }
+    @JsonView(View.Public.class)
     @GetMapping("/api/getUsers")
-    public List<UserC> getUsers(){
-       return repository.findAll();
+    public List<UserC> getUsers(HttpServletRequest request){
+        String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
+        return repository.findAllUserCWithoutId(username);
     }
 
     @PostMapping("/api/checking")

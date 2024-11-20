@@ -1,4 +1,5 @@
 package org.local.websocketapp.Config;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,7 +37,16 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            username = jwtTokenUtils.extractUserName(token);
+            try {
+                username = jwtTokenUtils.extractUserName(token);
+            }
+            catch (ExpiredJwtException e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                SecurityContextHolder.clearContext();
+                return;
+            }
+
+
         }
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
@@ -51,6 +61,11 @@ public class JwtFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
 
+            }
+            else {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token validation failed");
+                SecurityContextHolder.clearContext();
+                return;
             }
         }
 
