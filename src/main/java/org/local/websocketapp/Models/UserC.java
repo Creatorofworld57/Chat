@@ -1,5 +1,6 @@
 package org.local.websocketapp.Models;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -12,8 +13,9 @@ import java.util.List;
 public class UserC {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonView(View.Public.class)
     Long id;
-
+    @JsonView(View.Public.class)
     String name;
 
     Date createdAt;

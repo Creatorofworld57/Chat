@@ -57,32 +57,10 @@ public class ControllerForWs {
         messageRepository.save(message1);
         // отправка сообщения в конкретный чат
         messagingTemplate.convertAndSend("/message/chatGet/" + chat.getId(), message1);
+        messagingTemplate.convertAndSend("/message/chatUpdated", chat);
     }
-    @MessageMapping("/chatChanges")
-    @SendTo("/message/chatUpdated")
-    @Transactional
-    public Message getUpdatedChats(@Payload InputMessage message) {
-        String token = message.getToken();
-        // Проверяем, что аутентификация не является null, и пользователь аутентифицирован
-        Long userId = userRepository.findUserCByName(jwtTokenUtils.extractUserName(token))
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId();
 
-        Chat chat = chatRepository.findChatById(message.getId())
-                .orElseThrow(() -> new RuntimeException("Chat not found"));
-        chat.setLastMessage(message.getContent());
 
-        chatRepository.save(chat);
-
-        Message message1 = new Message();
-        message1.setChat(chat);
-        message1.setContent(message.getContent());
-        message1.setSender(userId);
-        message1.setTimestamp(LocalDateTime.now());
-        messageRepository.save(message1);
-
-        return message1;
-    }
 
 
 

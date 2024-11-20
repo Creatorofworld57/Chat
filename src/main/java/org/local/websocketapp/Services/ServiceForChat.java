@@ -24,6 +24,11 @@ public class ServiceForChat {
     private static final Logger logger = LoggerFactory.getLogger(ServiceForChat.class);
     private final ImageRepository imageRepository;
 
+
+
+
+
+
     public byte[] mergeImagesService(List<Long> ids) {
         if (ids.size() < 2) {
             throw new IllegalArgumentException("Необходимо как минимум два изображения для объединения.");

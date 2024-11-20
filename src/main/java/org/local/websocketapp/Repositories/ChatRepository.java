@@ -11,7 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat,Long> {
-    Optional<Chat> findChatById (Long id);
+    @Query("SELECT t FROM Chat t WHERE t.id = :id")
+    Optional<Chat> findChatById(@Param("id") Long id);
+
     Optional<Chat> findChatByName (String name);
 
     @Query("SELECT t FROM Chat t WHERE t.id IN :ids")
@@ -19,4 +21,18 @@ public interface ChatRepository extends JpaRepository<Chat,Long> {
 
     @Query("SELECT t.image FROM Chat t WHERE t.id IN :ids")
     byte[] findImagesById (@Param("ids") Long ids);
+    @Query("SELECT c " +
+            "FROM Chat c " +
+            "WHERE SIZE(c.participants) = 2")
+    List<Chat> findChatsWithTwoParticipants();
+
+
+
+
+
+
+
+
+
+
 }
