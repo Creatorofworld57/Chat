@@ -34,7 +34,8 @@ public class AuthController {
         if (!Objects.equals(ver, "fail")) {
             String refreshToken = jwtUtil.generateRefreshToken(authRequest.getName());
             return ResponseEntity.ok(new AuthResponse(ver, refreshToken));
-        } else {
+        }
+        else {
             System.out.println("bad credentials");
             return ResponseEntity.status(201).build();
         }

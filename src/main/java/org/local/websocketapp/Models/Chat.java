@@ -22,7 +22,4 @@ public class Chat {
     String lastMessage;
 
     byte[] image;
-
-
-
 }

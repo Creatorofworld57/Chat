@@ -1,8 +1,14 @@
 package org.local.websocketapp.Services;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
+import org.local.websocketapp.Models.Chat;
 import org.local.websocketapp.Models.Img;
+import org.local.websocketapp.Models.UserC;
+import org.local.websocketapp.Repositories.ChatRepository;
 import org.local.websocketapp.Repositories.ImageRepository;
+import org.local.websocketapp.Repositories.UserRepository;
+import org.local.websocketapp.Utils.JwtTokenUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -23,8 +30,9 @@ public class ServiceForChat {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceForChat.class);
     private final ImageRepository imageRepository;
-
-
+    JwtTokenUtils jwtTokenUtils;
+    UserRepository userRepository;
+    ChatRepository chatRepository;
 
 
 
@@ -103,5 +111,79 @@ public class ServiceForChat {
             ImageIO.write(image, formatName, byteArrayOutputStream);
             return byteArrayOutputStream.toByteArray();
         }
+    }
+
+    public List<Chat> GETchats(HttpServletRequest request){
+        String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
+
+        Optional<UserC> userOpt = userRepository.findUserCByName(username);
+        String userName = userOpt.get().getName();
+        List<Chat> buffer = chatRepository.findChatByUserC(userOpt.get().getChats());
+        buffer.forEach(i -> {
+            if (i.getParticipants().size() == 2) {
+                String name = i.getName();
+                name = name.replaceFirst(", " + userName, "") // Удалить ", userName"
+                        .replaceFirst(userName + ", ", ""); // Удалить "userName, "
+                i.setName(name.trim()); // Удалить лишние пробелы, если есть
+            }
+        });
+        return buffer;
+    }
+    public Long createChat(String username,List<Long> users){
+        UserC mainUser = userRepository.findUserCByName(username).get();
+        //добавляем того кто создал чат в список
+        users.add(mainUser.getId());
+        List<Chat> chats = chatRepository.findChatsWithTwoParticipants();
+        Long id = null;
+        // ищем, существует ли чат (личный), для чатов где пользователей больше 3 ограничений нет
+        for (Chat chat : chats) {
+            System.out.println(chat.getParticipants());
+            if (chat.getParticipants().size() == 2 && chat.getParticipants().contains(users.get(0)) && chat.getParticipants().contains(users.get(1))) {
+                id = chat.getId();
+               return id;
+            }
+        }
+        System.out.println(id);
+        //Если чат существует то ищем остальных пользователей
+        List<UserC> chatUsers = userRepository.findAllUserCWithId(users);
+        //Добавляем самого юзера к остальным ЧЛЕНАМ чата
+
+        // Извлекаем имена участников в виде списка
+        List<String> participantNames = chatUsers.stream()
+                .map(UserC::getName)
+                .collect(Collectors.toList());
+
+        // Создаем новый чат и устанавливаем участников и имя
+        Chat chat = new Chat();
+        chat.setParticipants(users);
+
+        // Устанавливаем имя чата как строку с именами участников, разделенными запятой
+        chat.setName(String.join(", ", participantNames));
+        // Сохраняем чат в репозиторий
+        chatRepository.save(chat);
+        //Сохраняем чат чтобы установился id и затем достаем его и используем для установки чата для каждого пользователя
+        Chat chatNew = chatRepository.findChatByName(String.join(", ", participantNames)).get();
+        //Устанавливаем для каждого пользователя новый чат
+        chatUsers.forEach(user -> user.getChats().add(chatNew.getId()));
+        userRepository.saveAll(chatUsers);
+
+        return id;
+    }
+    public static int levenshteinDistance(String s1, String s2) {
+        int[][] dp = new int[s1.length() + 1][s2.length() + 1];
+
+        for (int i = 0; i <= s1.length(); i++) {
+            for (int j = 0; j <= s2.length(); j++) {
+                if (i == 0) {
+                    dp[i][j] = j;
+                } else if (j == 0) {
+                    dp[i][j] = i;
+                } else {
+                    int cost = (s1.charAt(i - 1) == s2.charAt(j - 1)) ? 0 : 1;
+                    dp[i][j] = Math.min(Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1), dp[i - 1][j - 1] + cost);
+                }
+            }
+        }
+        return dp[s1.length()][s2.length()];
     }
 }

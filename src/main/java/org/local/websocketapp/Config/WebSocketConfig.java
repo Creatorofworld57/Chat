@@ -7,6 +7,7 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -19,7 +20,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOrigins(url)
                 .withSockJS();
     }
-   public  void configureMessageBroker(MessageBrokerRegistry config) {
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
+        registry.setMessageSizeLimit(64 * 1024*1024); // 64 КБ
+
+    }
+    @Override
+    public  void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/message");
         config.setApplicationDestinationPrefixes("/app");
     }

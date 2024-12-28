@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -20,4 +22,17 @@ public class Message {
     @ManyToOne
     @JoinColumn(name = "chat_id")
     Chat chat;
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "message_media", joinColumns = @JoinColumn(name = "message_id"))
+    @AttributeOverrides({
+            @AttributeOverride(name = "data", column = @Column(name = "data")),
+            @AttributeOverride(name = "type", column = @Column(name = "media_type"))
+    })
+    public List<Media> media = new ArrayList<>();
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name="message_attributes",joinColumns = @JoinColumn(name = "message_id"))
+    @Column(name="message_links")
+    List<Long> links = new ArrayList<>();
+
+
 }

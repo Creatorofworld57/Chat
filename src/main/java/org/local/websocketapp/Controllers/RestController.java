@@ -63,7 +63,7 @@ public class RestController {
     @GetMapping("/api/getUsers")
     public List<UserC> getUsers(HttpServletRequest request){
         String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
-        return repository.findAllUserCWithoutId(username);
+        return repository.findTop10ByNameNot(username);
     }
 
     @PostMapping("/api/checking")
