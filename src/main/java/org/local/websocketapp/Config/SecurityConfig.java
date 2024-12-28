@@ -73,7 +73,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login","/api/images/**","/apiChats/chatImages/**",
-                                "/signup","/api/checking","/refresh-token").permitAll()
+                                "/signup","/api/checking","/refresh-token","/api/getContent/**","/api/chat_files","/api/chat/get_file/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user").permitAll()
                         .requestMatchers("/newUser").anonymous()

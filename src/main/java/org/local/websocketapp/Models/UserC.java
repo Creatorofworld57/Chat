@@ -30,6 +30,11 @@ public class UserC {
 
     private Long previewImageId;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name="user_friends",joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name="friends")
+    List<Long> friends = new ArrayList<>();
+
     String password;
 
     public void addImgToProduct(Img img)  {img.setUser(this);}

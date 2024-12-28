@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<UserC,Long> {
     @Query("SELECT u FROM UserC u WHERE u.name != :username")
     List<UserC> findAllUserCWithoutId(@Param("username") String username);
 
+    List<UserC> findTop10ByNameNot(String username);
+
 }

@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.ByteArrayInputStream;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 @RestController
 @AllArgsConstructor
@@ -32,7 +34,7 @@ public class ChatEvents {
 
     UserRepository userRepository;
     ChatRepository chatRepository;
-
+    ServiceForChat serviceForChat;
     MessageRepository messageRepository;
     JwtTokenUtils jwtTokenUtils;
 
@@ -59,51 +61,27 @@ public class ChatEvents {
     }
 
     @GetMapping("/getChats/{id}")
-    public ResponseEntity<Chat> getChat(@PathVariable Long id) {
-        Chat chatOpt = chatRepository.findChatById(id).get();
-        return ResponseEntity.ok(chatOpt);
+    public ResponseEntity<Chat> getChat(@PathVariable Long id,HttpServletRequest request) {
+      Optional<Chat> chatOpt = chatRepository.findChatById(id);
+      String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
+      if(chatOpt.get().getParticipants().size() == 2) {
+          chatOpt.get().setName(chatOpt.get().getName().replaceFirst(username + ", ", "").replaceFirst(", "+username,""));
+      }
+        return ResponseEntity.ok(chatOpt.orElse(null));
     }
 
     @PostMapping("/createChat")
-    public void createChat(HttpServletRequest request, @RequestBody List<Long> users) {
+    public ResponseEntity<?> createChat(HttpServletRequest request, @RequestBody List<Long> users) {
         //извлекаем из токена username
         String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
+        Long id = serviceForChat.createChat(username, users);
+        //если чат существует то приходит id этого чата
+        if (id == null) {
+            return ResponseEntity.status(200).build();
+        }
+        else return ResponseEntity.status(201).body(id);
 
-
-        // Получаем пользователей по их ID
-
-        List<UserC> chatUsers = userRepository.findAllUserCWithId(users);
-        //Добавляем самого юзера к остальным ЧЛЕНАМ чата
-        UserC mainUser = userRepository.findUserCByName(username).get();
-        chatUsers.add(mainUser);
-
-        // Извлекаем имена участников в виде списка
-        List<String> participantNames = chatUsers.stream()
-                .map(UserC::getName)
-                .collect(Collectors.toList());
-
-        // Создаем новый чат и устанавливаем участников и имя
-        Chat chat = new Chat();
-        users.add(mainUser.getId());
-        chat.setParticipants(users);
-        //солздаем фото для чата
-        //  chat.setImage( serviceForChat.mergeImagesService(chatUsers.stream()
-        //           .map(UserC::getPreviewImageId)
-        //          .collect(Collectors.toList())));
-        // chat.setImage(imageRepository.findById(chatUsers.get(0).getPreviewImageId()).get().getBytes());
-
-
-        // Устанавливаем имя чата как строку с именами участников, разделенными запятой
-        chat.setName(String.join(", ", participantNames));
-        // Сохраняем чат в репозиторий
-        chatRepository.save(chat);
-        //Сохраняем чат чтобы установился id и затем достаем его и используем для установки чата для каждого пользователя
-        Chat chatNew = chatRepository.findChatByName(String.join(", ", participantNames)).get();
-        //Устанавливаем для каждого пользователя новый чат
-        chatUsers.forEach(user -> user.getChats().add(chatNew.getId()));
-        userRepository.saveAll(chatUsers);
     }
-
 
     @GetMapping("/getMessages/{id}")
     @Transactional
@@ -111,7 +89,7 @@ public class ChatEvents {
         if (id != null && id != 0) {
             System.out.println("getMessage");
             Chat chatOpt = chatRepository.findChatById(id).get();
-            return ResponseEntity.ok(messageRepository.findMessageByChat(chatOpt));
+            return ResponseEntity.ok(messageRepository.findMessagesByChat(chatOpt));
         } else return ResponseEntity.ok(List.of());
     }
 
@@ -138,12 +116,11 @@ public class ChatEvents {
         String username = jwtTokenUtils.extractUserName(request.getHeader("Authorization").substring(7));
         users.add(userRepository.findUserCByName(username).get().getId());
         List<Chat> chats = chatRepository.findChatsWithTwoParticipants();
-        System.out.println(chats);
         Long id = null;
-        System.out.println("USers: "+users);
+
         for (Chat chat : chats) {
             System.out.println(chat.getParticipants());
-            if (chat.getParticipants().size() == 2 && chat.getParticipants().contains(users.get(0))&& chat.getParticipants().contains(users.get(1))) {
+            if (chat.getParticipants().size() == 2 && chat.getParticipants().contains(users.get(0)) && chat.getParticipants().contains(users.get(1))) {
                 id = chat.getId();
                 break;
             }
@@ -152,6 +129,14 @@ public class ChatEvents {
         if (id == null) {
             return ResponseEntity.status(200).build();
         } else return ResponseEntity.status(201).body(id);
+    }
+
+    @GetMapping("/users_search")
+    public List<UserC> usersSearch(@RequestParam String query) {
+        List<UserC> list = userRepository.findAll();
+       return list.stream()
+                .sorted(Comparator.comparingInt(user -> ServiceForChat.levenshteinDistance(user.getName(),query))).toList();
+
     }
 
 

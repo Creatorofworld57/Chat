@@ -42,7 +42,6 @@ public class UserService1 {
 
 
             if (authentication != null && authentication.isAuthenticated()) {
-
                 return jwtTokenUtils.generateToken(user.getName());
             } else {
                 return "fail";
